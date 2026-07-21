@@ -1,9 +1,15 @@
 name: Autograde
 
-# Runs the test suite on every push so graders see a pass/fail at a glance.
+# Runs the test suite on every push so graders see a pass/fail at a glance, and
+# renders a phone-framed screenshot of your screen (uploaded as a run artifact
+# and published to the `previews` branch) so you can see how it looks.
 on:
   push:
+    branches-ignore: [previews]
   workflow_dispatch:
+
+permissions:
+  contents: write   # to publish the screenshot to the previews branch
 
 jobs:
   test:
@@ -18,9 +24,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run tests
+      # --update-goldens makes the capture test WRITE the screenshot instead of
+      # comparing pixels, so it never fails; the behaviour tests still score.
+      - name: Run tests (and render the screenshot)
         id: tests
-        run: flutter test --reporter json > test-results.json
+        run: flutter test --update-goldens --reporter json > test-results.json
 
       - name: Write grading summary
         if: always()
@@ -57,8 +65,11 @@ jobs:
                   break;
               }
             }
-            final ids =
-                names.keys.where((id) => !hidden.contains(id)).toList();
+            // The `capture:` test is the screenshot camera, not a scored check.
+            final ids = names.keys
+                .where((id) => !hidden.contains(id))
+                .where((id) => !(names[id] ?? '').startsWith('capture:'))
+                .toList();
             final passed =
                 ids.where((id) => results[id] == 'success').length;
             final total = ids.length;
@@ -72,7 +83,41 @@ jobs:
               final icon = results[id] == 'success' ? '✅' : '❌';
               out.writeln('| $icon | ${names[id]} |');
             }
+            out.writeln();
+            out.writeln('_A phone-framed screenshot of your screen is attached to this run (Artifacts) and on the `previews` branch._');
             stdout.write(out.toString());
           }
           EOF
           dart summary.dart >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot
+          path: test/screenshots/
+          if-no-files-found: ignore
+
+      - name: Publish screenshot to the previews branch
+        if: success() && github.ref == 'refs/heads/main'
+        continue-on-error: true   # visibility extra; must never fail the Autograde
+        run: |
+          shopt -s nullglob
+          shots=(test/screenshots/*.png)
+          if [ ${#shots[@]} -eq 0 ]; then echo "no screenshots to publish"; exit 0; fi
+          ts=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          tmp=$(mktemp -d)
+          for f in "${shots[@]}"; do
+            base=$(basename "${f%.png}")
+            cp "$f" "$tmp/${base}-mobile.png"   # -mobile so the gradebook picks it up
+          done
+          git config user.name "course-bot"
+          git config user.email "course-bot@users.noreply.github.com"
+          git checkout --orphan previews-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdx >/dev/null 2>&1 || true
+          mkdir -p "submission/$ts"
+          cp "$tmp"/*.png "submission/$ts/"
+          git add "submission/$ts"
+          git commit -m ":camera: Publish screenshot [skip ci]"
+          git push -f origin HEAD:previews
