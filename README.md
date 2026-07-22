@@ -67,10 +67,15 @@ cd m5a5-<classcode>-yourname
 ## Run and check
 
 ```bash
-flutter pub get     # fetch packages
-flutter run         # launch it inside a phone frame (device_preview)
-flutter test        # run the checks
+flutter pub get              # fetch packages
+flutter run -d chrome        # launch it in your browser (device_preview shows a phone frame)
+flutter test                 # run the checks
 ```
+
+> **In a Codespace, always run with `-d chrome`.** A Codespace has no phone
+> emulator, so `-d chrome` opens your app in a browser tab (device_preview still
+> wraps it in a phone frame so it looks like a phone). The app hot-reloads when
+> you save; press `r` to hot-reload by hand, or `q` in the terminal to stop it.
 
 You do not need to touch `lib/main.dart` - it just launches your screen inside a
 mobile preview so you can see it as a phone. Your instructor's grader also takes
