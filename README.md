@@ -68,14 +68,22 @@ cd m5a5-<classcode>-yourname
 
 ```bash
 flutter pub get              # fetch packages
-flutter run -d chrome        # launch it in your browser (device_preview shows a phone frame)
+flutter run -d chrome        # on your own laptop: launches Chrome
 flutter test                 # run the checks
 ```
 
-> **In a Codespace, always run with `-d chrome`.** A Codespace has no phone
-> emulator, so `-d chrome` opens your app in a browser tab (device_preview still
-> wraps it in a phone frame so it looks like a phone). The app hot-reloads when
-> you save; press `r` to hot-reload by hand, or `q` in the terminal to stop it.
+> **In a Codespace, run with `-d web-server` instead.** A Codespace has no phone
+> emulator and no browser inside it, so `-d chrome` cannot work there. Use:
+>
+> ```bash
+> flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0
+> ```
+>
+> Codespaces forwards port 8080 for you. Click **Open in Browser** on the pop-up,
+> or open the **Ports** tab and click the globe next to 8080. device_preview still
+> wraps your app in a phone frame so it looks like a phone. Press `R` in the
+> terminal to restart after a change (on recent Flutter `r` hot-reloads too), or
+> `q` to stop it.
 
 You do not need to touch `lib/main.dart` - it just launches your screen inside a
 mobile preview so you can see it as a phone. Your instructor's grader also takes
