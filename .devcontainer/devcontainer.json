@@ -1,6 +1,13 @@
 {
   "name": "HAU Codespace (Flutter)",
   "image": "ghcr.io/cirruslabs/flutter:stable",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Flutter app",
+      "onAutoForward": "notify"
+    }
+  },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
     "ghcr.io/devcontainers/features/git:1": {}
